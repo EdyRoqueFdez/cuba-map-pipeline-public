@@ -42,3 +42,15 @@ jobs:
             cuba_transport.mbtiles
             checksum.txt
           retention-days: 30
+
+      - name: Publish as release (ODbL source offer + resumable download)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(cut -d' ' -f1 checksum.txt)
+          gh release create "map-${{ github.run_number }}" \
+            --title "Cuba transport basemap build ${{ github.run_number }}" \
+            --notes "Vector basemap derived from OpenStreetMap (c) OpenStreetMap contributors, ODbL 1.0.
+            Pipeline: tilemaker z2-z14, transport layers only.
+            sha256: $SHA" \
+            cuba_transport.mbtiles
