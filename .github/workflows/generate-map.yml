@@ -1,0 +1,44 @@
+name: generate-map
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tilemaker (Linux)
+        run: |
+          curl -sSL --retry 5 -o tm.zip https://github.com/systemed/tilemaker/releases/download/v3.0.0/tilemaker-ubuntu-22.04.zip
+          unzip -o tm.zip
+          TM_PATH=$(find . -maxdepth 3 -name tilemaker -type f | head -1)
+          chmod +x "$TM_PATH"
+          echo "TM_PATH=$TM_PATH" >> "$GITHUB_ENV"
+
+      - name: Download Cuba extract (Geofabrik)
+        run: |
+          curl -sSL --retry 5 -o cuba-latest.osm.pbf \
+            https://download.geofabrik.de/central-america/cuba-latest.osm.pbf
+          ls -la cuba-latest.osm.pbf
+
+      - name: Generate MBTiles
+        run: |
+          "${{ env.TM_PATH }}" \
+            --input cuba-latest.osm.pbf \
+            --output cuba_transport.mbtiles \
+            --config config/config.json \
+            --process config/process.lua \
+            "--bbox=-84.95,19.82,-74.13,23.19"
+          ls -la cuba_transport.mbtiles
+          sha256sum cuba_transport.mbtiles | tee checksum.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuba_transport_mbtiles
+          path: |
+            cuba_transport.mbtiles
+            checksum.txt
+          retention-days: 30

@@ -1,0 +1,18 @@
+{
+	"layers": {
+		"roads": { "minzoom": 2, "maxzoom": 14 },
+		"road_labels": { "minzoom": 6, "maxzoom": 14 },
+		"admin": { "minzoom": 2, "maxzoom": 10 },
+		"poi": { "minzoom": 10, "maxzoom": 14 }
+	},
+	"settings": {
+		"minzoom": 2,
+		"maxzoom": 14,
+		"basezoom": 14,
+		"include_ids": false,
+		"name": "Muevete Cuba Transport",
+		"version": "0.1",
+		"description": "Transport basemap",
+		"compress": "gzip"
+	}
+}
