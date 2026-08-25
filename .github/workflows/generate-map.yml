@@ -35,7 +35,12 @@ jobs:
             --process config/process.lua \
             "--bbox=-84.95,19.82,-74.13,23.19"
           ls -la cuba_transport.mbtiles
-          sha256sum cuba_transport.mbtiles | tee checksum.txt
+          sha256sum cuba_transport.mbtiles | tee sha256.txt
+
+      # MPC-03: red build and NO release when the asset exceeds the budget.
+      # Must run before publication.
+      - name: Assert map size budget
+        run: bash scripts/assert_size.sh cuba_transport.mbtiles
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -43,17 +48,17 @@ jobs:
           name: cuba_transport_mbtiles
           path: |
             cuba_transport.mbtiles
-            checksum.txt
+            sha256.txt
           retention-days: 30
 
       - name: Publish as release (ODbL source offer + resumable download)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          SHA=$(cut -d' ' -f1 checksum.txt)
+          SHA=$(cut -d' ' -f1 sha256.txt)
           gh release create "map-${{ github.run_number }}" \
             --title "Cuba transport basemap build ${{ github.run_number }}" \
             --notes "Vector basemap derived from OpenStreetMap (c) OpenStreetMap contributors, ODbL 1.0.
-            Pipeline: tilemaker z2-z14, transport layers only.
+            Pipeline: tilemaker z2-z14, transport layers only, per-layer simplification candidates (MPC-02).
             sha256: $SHA" \
-            cuba_transport.mbtiles
+            cuba_transport.mbtiles sha256.txt
