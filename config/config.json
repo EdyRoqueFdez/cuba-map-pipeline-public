@@ -1,8 +1,26 @@
 {
 	"layers": {
-		"roads": { "minzoom": 2, "maxzoom": 14 },
-		"road_labels": { "minzoom": 6, "maxzoom": 14 },
-		"admin": { "minzoom": 2, "maxzoom": 10 },
+		"roads": {
+			"minzoom": 2,
+			"maxzoom": 14,
+			"simplify_below": 13,
+			"simplify_level": 0.0003,
+			"simplify_ratio": 2.0
+		},
+		"road_labels": {
+			"minzoom": 6,
+			"maxzoom": 14,
+			"simplify_below": 12,
+			"simplify_level": 0.0003,
+			"simplify_ratio": 2.0
+		},
+		"admin": {
+			"minzoom": 2,
+			"maxzoom": 10,
+			"simplify_below": 9,
+			"simplify_level": 0.0005,
+			"simplify_ratio": 2.0
+		},
 		"poi": { "minzoom": 10, "maxzoom": 14 }
 	},
 	"settings": {

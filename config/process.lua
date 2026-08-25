@@ -1,11 +1,27 @@
 -- Muevete Cuba transport basemap - tilemaker v3 process script
 -- Layers: roads, road_labels, admin, poi. No buildings/landuse/natural.
 -- Names: only `name` (Spanish), never name:* multilingual tags.
+--
+-- MPC-02 OPTIMIZATION CANDIDATES (NOT locked):
+--   config.json carries per-layer simplification flags:
+--     roads       simplify_below 13, level 0.0003, ratio 2.0
+--     road_labels simplify_below 12, level 0.0003, ratio 2.0
+--     admin       simplify_below 9,  level 0.0005, ratio 2.0
+--     poi         none (points; simplification does not apply)
+--   These values stay CANDIDATES until the visual before/after gate
+--   (spec MPC-04) is reviewed and approved in this repo. If the gate
+--   rejects, revert/adjust these flags and re-run.
+--
+-- DECISION (recorded per MPC-02): classes `service` and `track` are
+-- FILTERED OUT of ROAD_CLASSES entirely instead of minzoom-elevated.
+-- Rationale: dense low-value geometry at z12+ for a transport basemap;
+-- exclusion shrinks tiles with no orientation loss at the zooms the app
+-- ships (z2-z14). Subject to the same MPC-04 visual approval.
 
 local ROAD_CLASSES = {
 	motorway = true, trunk = true, primary = true, secondary = true,
 	tertiary = true, unclassified = true, residential = true,
-	service = true, track = true,
+	-- service / track intentionally excluded (MPC-02 candidates, see above)
 	motorway_link = true, trunk_link = true, primary_link = true,
 	secondary_link = true, tertiary_link = true
 }
