@@ -1,0 +1,73 @@
+name: generate-map-full
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tilemaker (Linux)
+        run: |
+          curl -sSL --retry 5 -o tm.zip https://github.com/systemed/tilemaker/releases/download/v3.0.0/tilemaker-ubuntu-22.04.zip
+          unzip -o tm.zip
+          TM_PATH=$(find . -maxdepth 3 -name tilemaker -type f | head -1)
+          chmod +x "$TM_PATH"
+          echo "TM_PATH=$TM_PATH" >> "$GITHUB_ENV"
+
+      - name: Download Cuba extract (Geofabrik)
+        run: |
+          curl -sSL --retry 5 -o cuba-latest.osm.pbf \
+            https://download.geofabrik.de/central-america/cuba-latest.osm.pbf
+          ls -la cuba-latest.osm.pbf
+
+      - name: Generate full MBTiles
+        run: |
+          "${{ env.TM_PATH }}" \
+            --input cuba-latest.osm.pbf \
+            --output cuba_full.mbtiles \
+            --config config/config-full.json \
+            --process config/process-full.lua \
+            --fast \
+            --skip-integrity \
+            --threads 2
+          ls -la cuba_full.mbtiles
+          sha256sum cuba_full.mbtiles | tee sha256.txt
+
+      - name: Assert size (200 MiB limit for full map)
+        run: |
+          SIZE=$(stat -c%s cuba_full.mbtiles)
+          MAX=209715200
+          echo "Full map size: ${SIZE} bytes (limit ${MAX})"
+          if [ "$SIZE" -gt "$MAX" ]; then
+            echo "error: exceeds 200 MiB budget" >&2
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuba_full_mbtiles
+          path: |
+            cuba_full.mbtiles
+            sha256.txt
+          retention-days: 30
+
+      - name: Publish as release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(cut -d' ' -f1 sha256.txt)
+          SIZE=$(stat -c%s cuba_full.mbtiles)
+          gh release create "map-full-${{ github.run_number }}" \
+            --title "Cuba full basemap build ${{ github.run_number }}" \
+            --notes "Full Cuba basemap derived from OpenStreetMap (c) OpenStreetMap contributors, ODbL 1.0.
+            All layers: water, landuse, buildings, roads, admin, poi.
+            Pipeline: tilemaker z2-z14, full features, Maps.me dark styling.
+            Size: ${SIZE} bytes. sha256: $SHA" \
+            cuba_full.mbtiles sha256.txt
