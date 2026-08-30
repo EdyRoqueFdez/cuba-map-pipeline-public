@@ -1,5 +1,5 @@
 -- Muevete Cuba transport basemap - tilemaker v3 process script
--- Layers: roads, road_labels, admin, poi. No buildings/landuse/natural.
+-- Layers: roads, road_labels, admin, poi, water.
 -- Names: only `name` (Spanish), never name:* multilingual tags.
 --
 -- MPC-02 OPTIMIZATION CANDIDATES (NOT locked):
@@ -31,6 +31,15 @@ local POI_CLASSES = {
 	police = true, fire_station = true, bus_station = true
 }
 
+local WATER_WAY_CLASSES = {
+	riverbank = true, pond = true, canal = true, dock = true,
+	marsh = true, wetland = true
+}
+
+local WATER_LANDUSE_CLASSES = {
+	reservoir = true, basin = true
+}
+
 -- Nodes are only scanned when one of these keys is present (tilemaker contract)
 node_keys = { "amenity" }
 
@@ -43,6 +52,12 @@ function node_function()
 		if name ~= "" then Attribute("name", name) end
 		MinZoom(10)
 	end
+end
+
+-- Emit a water layer feature for the current object
+function emit_water(class)
+	Layer("water", true)
+	Attribute("class", class)
 end
 
 function way_function()
@@ -78,6 +93,28 @@ function way_function()
 			local name = Find("name")
 			if name ~= "" then Attribute("name", name) end
 		end
+		return
+	end
+
+	-- Water polygons (closed ways)
+	local natural = Find("natural")
+	if natural == "water" then
+		local water = Find("water")
+		if water ~= "" then emit_water(water)
+		else emit_water("water") end
+		return
+	end
+
+	local waterway = Find("waterway")
+	if WATER_WAY_CLASSES[waterway] then
+		emit_water(waterway)
+		return
+	end
+
+	local landuse = Find("landuse")
+	if WATER_LANDUSE_CLASSES[landuse] then
+		emit_water(landuse)
+		return
 	end
 end
 
@@ -92,5 +129,27 @@ function relation_function()
 			local name = Find("name")
 			if name ~= "" then Attribute("name", name) end
 		end
+		return
+	end
+
+	-- Water multipolygon relations
+	local natural = Find("natural")
+	if natural == "water" then
+		local water = Find("water")
+		if water ~= "" then emit_water(water)
+		else emit_water("water") end
+		return
+	end
+
+	local waterway = Find("waterway")
+	if WATER_WAY_CLASSES[waterway] then
+		emit_water(waterway)
+		return
+	end
+
+	local landuse = Find("landuse")
+	if WATER_LANDUSE_CLASSES[landuse] then
+		emit_water(landuse)
+		return
 	end
 end
